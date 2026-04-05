@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AuthGuard — Feature Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #03080F;
+  --surface: #060D18;
+  --card:    #080F1C;
+  --border:  #0C2848;
+  --cyan:    #00CFFF;
+  --green:   #00E87A;
+  --red:     #FF1F45;
+  --orange:  #FF8800;
+  --yellow:  #FFD600;
+  --purple:  #9B5FFF;
+  --white:   #FFFFFF;
+  --text:    #B8D0E8;
+  --muted:   #3D566A;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse at 10% 20%, rgba(0,150,255,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(155,95,255,0.05) 0%, transparent 50%);
+}
+
+/* SCANLINES */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px);
+  pointer-events:none; z-index:9999;
+}
+
+/* GRID BG */
+.grid-bg {
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(0,70,160,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,70,160,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events:none; z-index:0;
+}
+
+/* ── NAV ─────────────────────────────────────────────────────── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: rgba(3,8,15,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-brand .lock { font-size: 1.2rem; }
+
+.nav-brand h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 900;
+  color: var(--cyan);
+  letter-spacing: 3px;
+  text-shadow: 0 0 20px rgba(0,207,255,0.5);
+}
+
+.nav-brand span {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 4px;
+  list-style: none;
+}
+
+.nav-links a {
+  display: block;
+  padding: 6px 14px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.nav-links a:hover {
+  color: var(--cyan);
+  border-color: rgba(0,207,255,0.3);
+  background: rgba(0,207,255,0.06);
+}
+
+.nav-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── MAIN WRAPPER ────────────────────────────────────────────── */
+main {
+  position: relative;
+  z-index: 10;
+  padding-top: 56px;
+}
+
+/* ── SECTIONS (pages) ────────────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  padding: 60px 60px 80px;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top accent bar per section */
+.page::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.page-hero::before    { background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+.page-scanner::before { background: linear-gradient(90deg, transparent, var(--orange), transparent); }
+.page-output::before  { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+.page-engine::before  { background: linear-gradient(90deg, transparent, var(--purple), transparent); }
+.page-signals::before { background: linear-gradient(90deg, transparent, var(--yellow), transparent); }
+.page-dashboard::before { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+.page-tech::before    { background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+
+/* ── PAGE COUNTER BADGE ──────────────────────────────────────── */
+.page-badge {
+  position: absolute;
+  top: 24px; right: 60px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-badge::before {
+  content: '';
+  width: 20px; height: 1px;
+  background: var(--muted);
+}
+
+/* ── SECTION LABEL ───────────────────────────────────────────── */
+.section-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-label::before {
+  content: '';
+  width: 4px; height: 18px;
+  border-radius: 2px;
+}
+
+.page-hero    .section-label { color: var(--cyan);   }
+.page-hero    .section-label::before { background: var(--cyan); }
+.page-scanner .section-label { color: var(--orange); }
+.page-scanner .section-label::before { background: var(--orange); }
+.page-output  .section-label { color: var(--red);    }
+.page-output  .section-label::before { background: var(--red); }
+.page-engine  .section-label { color: var(--purple); }
+.page-engine  .section-label::before { background: var(--purple); }
+.page-signals .section-label { color: var(--yellow); }
+.page-signals .section-label::before { background: var(--yellow); }
+.page-dashboard .section-label { color: var(--green); }
+.page-dashboard .section-label::before { background: var(--green); }
+.page-tech    .section-label { color: var(--cyan);   }
+.page-tech    .section-label::before { background: var(--cyan); }
+
+.page-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--white);
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+
+.page-desc {
+  font-size: 1rem;
+  color: var(--muted);
+  margin-bottom: 40px;
+  max-width: 600px;
+}
+
+/* ── CARDS ───────────────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 26px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+
+.card-accent {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+}
+
+.card-icon {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.card-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.card-body {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ── GRID LAYOUTS ────────────────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+
+/* ── HERO PAGE ───────────────────────────────────────────────── */
+.page-hero {
+  background-image:
+    radial-gradient(ellipse at 80% 50%, rgba(0,207,255,0.07) 0%, transparent 60%);
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.hero-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.lock-ring {
+  width: 200px; height: 200px;
+  border: 2px solid rgba(0,207,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: spin-slow 20s linear infinite;
+}
+
+.lock-ring::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border: 1px dashed rgba(0,207,255,0.15);
+  border-radius: 50%;
+  animation: spin-slow 30s linear infinite reverse;
+}
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+
+.lock-emoji {
+  font-size: 5rem;
+  animation: spin-slow 20s linear infinite reverse;
+  display: block;
+}
+
+.hero-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--cyan);
+  letter-spacing: 6px;
+  text-shadow: 0 0 30px rgba(0,207,255,0.5);
+}
+
+.hero-tagline {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-align: center;
+}
+
+.hero-content h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: var(--white);
+  line-height: 1.15;
+  margin-bottom: 20px;
+}
+
+.hero-content h2 span { color: var(--cyan); }
+
+.hero-content p {
+  font-size: 1.05rem;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 30px;
+  max-width: 500px;
+}
+
+.hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.pill {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  border: 1px solid;
+}
+
+.pill-cyan   { border-color: var(--cyan);   color: var(--cyan);   background: rgba(0,207,255,0.08); }
+.pill-green  { border-color: var(--green);  color: var(--green);  background: rgba(0,232,122,0.08); }
+.pill-orange { border-color: var(--orange); color: var(--orange); background: rgba(255,136,0,0.08); }
+.pill-purple { border-color: var(--purple); color: var(--purple); background: rgba(155,95,255,0.08); }
+.pill-red    { border-color: var(--red);    color: var(--red);    background: rgba(255,31,69,0.08); }
+
+.stat-row {
+  display: flex;
+  gap: 24px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--cyan);
+  display: block;
+}
+
+.stat-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+
+/* ── FEATURE ITEM (list style) ───────────────────────────────── */
+.feat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  border-left: 3px solid;
+  transition: background 0.2s;
+}
+
+.feat-item:hover { background: rgba(255,255,255,0.04); }
+
+.feat-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.feat-text h4 {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin-bottom: 4px;
+}
+
+.feat-text p {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* ── SCORE TABLE ─────────────────────────────────────────────── */
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.score-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: var(--muted);
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+}
+
+.score-table td {
+  padding: 12px 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.82rem;
+  border-bottom: 1px solid rgba(12,40,72,0.5);
+}
+
+.score-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.score-bar-wrap { display: flex; align-items: center; gap: 10px; }
+
+.score-bar {
+  height: 8px;
+  border-radius: 4px;
+  min-width: 20px;
+  transition: width 1s ease;
+}
+
+.score-val {
+  font-weight: 700;
+  min-width: 36px;
+}
+
+/* ── TECH GRID ───────────────────────────────────────────────── */
+.tech-block {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tech-header {
+  padding: 14px 20px;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tech-items { padding: 10px 16px 16px; }
+
+.tech-item {
+  padding: 10px 4px;
+  border-bottom: 1px solid rgba(12,40,72,0.5);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tech-item:last-child { border-bottom: none; }
+
+.tech-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.tech-item-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--white);
+  margin-bottom: 2px;
+}
+
+.tech-item-desc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ── BADGE STATUS ────────────────────────────────────────────── */
+.badge-normal {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 16px; border-radius: 20px;
+  background: rgba(0,232,122,0.1);
+  border: 1px solid rgba(0,232,122,0.4);
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem; font-weight: 700;
+}
+
+.badge-abnormal {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 16px; border-radius: 20px;
+  background: rgba(255,31,69,0.1);
+  border: 1px solid rgba(255,31,69,0.4);
+  color: var(--red);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem; font-weight: 700;
+  animation: badge-glow 2s infinite;
+}
+
+@keyframes badge-glow {
+  0%,100% { box-shadow: none; }
+  50% { box-shadow: 0 0 20px rgba(255,31,69,0.4); }
+}
+
+/* ── BIG VERDICT DISPLAY ─────────────────────────────────────── */
+.verdict-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.verdict-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid;
+}
+
+.verdict-row.normal-row {
+  background: rgba(0,232,122,0.06);
+  border-color: rgba(0,232,122,0.3);
+}
+
+.verdict-row.abnormal-row {
+  background: rgba(255,31,69,0.06);
+  border-color: rgba(255,31,69,0.3);
+}
+
+.verdict-emoji { font-size: 2.5rem; }
+
+.verdict-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+}
+
+.verdict-row.normal-row .verdict-label { color: var(--green); }
+.verdict-row.abnormal-row .verdict-label { color: var(--red); }
+
+.verdict-desc {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ── METER ───────────────────────────────────────────────────── */
+.meter-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.meter-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.meter-track {
+  height: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 6px;
+}
+
+.meter-scale {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+}
+
+/* ── DASHBOARD FEATURES ──────────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.dash-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  border-left: 3px solid;
+  transition: transform 0.2s;
+}
+
+.dash-card:hover { transform: translateY(-2px); }
+
+.dash-icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+
+.dash-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.dash-desc { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+
+/* ── FOOTER ──────────────────────────────────────────────────── */
+footer {
+  position: relative;
+  z-index: 10;
+  padding: 30px 60px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(3,8,15,0.8);
+}
+
+.footer-brand {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: var(--cyan);
+  letter-spacing: 3px;
+}
+
+.footer-copy {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+/* ── DIVIDER ─────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 30px 0;
+}
+
+/* ── SCROLL FADE IN ──────────────────────────────────────────── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.stagger > *:nth-child(1) { transition-delay: 0.0s; }
+.stagger > *:nth-child(2) { transition-delay: 0.08s; }
+.stagger > *:nth-child(3) { transition-delay: 0.16s; }
+.stagger > *:nth-child(4) { transition-delay: 0.24s; }
+.stagger > *:nth-child(5) { transition-delay: 0.32s; }
+.stagger > *:nth-child(6) { transition-delay: 0.40s; }
+.stagger > *:nth-child(7) { transition-delay: 0.48s; }
+.stagger > *:nth-child(8) { transition-delay: 0.56s; }
+.stagger > *:nth-child(9) { transition-delay: 0.64s; }
+
+@media (max-width: 900px) {
+  .grid-3, .grid-4, .dash-grid { grid-template-columns: 1fr 1fr; }
+  .grid-2, .grid-2-1, .hero-inner { grid-template-columns: 1fr; }
+  .page { padding: 50px 24px 60px; }
+  nav { padding: 0 20px; }
+  .nav-links { display: none; }
+  footer { flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <span class="lock">🔐</span>
+    <div>
+      <h1>AUTHGUARD</h1>
+      <span>FEATURE OVERVIEW</span>
+    </div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#hero">HOME</a></li>
+    <li><a href="#scanner">SCANNER</a></li>
+    <li><a href="#output">OUTPUT</a></li>
+    <li><a href="#engine">AI ENGINE</a></li>
+    <li><a href="#signals">SIGNALS</a></li>
+    <li><a href="#dashboard">DASHBOARD</a></li>
+    <li><a href="#tech">TECH STACK</a></li>
+  </ul>
+  <div class="nav-dot"></div>
+</nav>
+
+<main>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE 1 — HERO / OVERVIEW
+     ════════════════════════════════════════════════════════════ -->
+<section class="page page-hero" id="hero">
+  <div class="page-badge">PAGE 01 / 07</div>
+
+  <div class="hero-inner">
+    <div class="hero-logo fade-in">
+      <div class="lock-ring">
+        <span class="lock-emoji">🔐</span>
+      </div>
+      <div class="hero-name">AUTHGUARD</div>
+      <div class="hero-tagline">AI LOGIN THREAT DETECTION SYSTEM</div>
+    </div>
+
+    <div class="hero-content">
+      <div class="section-label">OVERVIEW</div>
+      <h2>Detect Every<br><span>Abnormal Login</span><br>Instantly</h2>
+      <p>AuthGuard uses dual machine learning models to analyze login events in real-time and classify them as <strong style="color:var(--green)">NORMAL</strong> or <strong style="color:var(--red)">ABNORMAL</strong> — protecting against brute-force, credential stuffing, and insider threats.</p>
+
+      <div class="hero-pills fade-in">
+        <span class="pill pill-cyan">Machine Learning</span>
+        <span class="pill pill-orange">Anomaly Detection</span>
+        <span class="pill pill-green">Real-Time Scanning</span>
+        <span class="pill pill-purple">Dual ML Models</span>
+        <span class="pill pill-red">Threat Intelligence</span>
+      </div>
+
+      <div class="stat-row fade-in">
+        <div class="stat-item">
+          <span class="stat-num">2,000</span>
+          <span class="stat-lbl">LOGS ANALYZED</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">92%</span>
+          <span class="stat-lbl">ACCURACY</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">0.947</span>
+          <span class="stat-lbl">ROC-AUC</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">&lt;1s</span>
+          <span class="stat-lbl">RESPONSE TIME</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE 2 — LOGIN THREAT SCANNER
+     ════════════════════════════════════════════════════════════ -->
+<section class="page page-scanner" id="scanner">
+  <div class="page-badge">PAGE 02 / 07</div>
+  <div class="section-label">LOGIN THREAT SCANNER</div>
+  <h2 class="page-title">Input Interface Features</h2>
+  <p class="page-desc">What users enter into the AuthGuard scanner to trigger an AI-powered threat analysis.</p>
+
+  <div class="grid-2 stagger">
+
+    <div class="feat-list fade-in">
+      <div class="feat-item" style="border-color:var(--cyan)">
+        <span class="feat-icon">🌐</span>
+        <div class="feat-text">
+          <h4 style="color:var(--cyan)">SOURCE IP ADDRESS</h4>
+          <p>Manually enter any IPv4 address. AuthGuard checks it against a known malicious IP database and flags public DNS resolvers (8.8.8.8, 1.1.1.1) as suspicious. Known bad IPs like 45.33.12.99 instantly raise the threat score by +40.</p>
+        </div>
+      </div>
+
+      <div class="feat-item" style="border-color:var(--orange)">
+        <span class="feat-icon">🔑</span>
+        <div class="feat-text">
+          <h4 style="color:var(--orange)">AUTHENTICATION METHOD</h4>
+          <p>Select from three methods: <strong>Password</strong> (weakest — triggers extra score on failure), <strong>MFA</strong> (strong — multi-factor authentication), or <strong>SSH Key</strong> (secure — key-based authentication). Each method contributes to the risk profile.</p>
+        </div>
+      </div>
+
+      <div class="feat-item" style="border-color:var(--red)">
+        <span class="feat-icon">🚦</span>
+        <div class="feat-text">
+          <h4 style="color:var(--red)">LOGIN STATUS</h4>
+          <p>Select <strong>SUCCESS</strong> or <strong>FAIL</strong>. A failed login immediately adds +20 to the threat score. Combined with high failure count and a weak auth method, this is a strong brute-force indicator.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="feat-list fade-in">
+      <div class="feat-item" style="border-color:var(--yellow)">
+        <span class="feat-icon">🔢</span>
+        <div class="feat-text">
+          <h4 style="color:var(--yellow)">FAILURE COUNT SLIDER</h4>
+          <p>Slide from 0 to 20 to indicate how many failed login attempts have occurred from this IP in the last 24 hours. 0 failures = clean. 4–9 = elevated risk (+12). 10+ = brute-force zone (+25), one of the strongest threat signals.</p>
+        </div>
+      </div>
+
+      <div class="feat-item" style="border-color:var(--purple)">
+        <span class="feat-icon">👤</span>
+        <div class="feat-text">
+          <h4 style="color:var(--purple)">USERNAME TYPE</h4>
+          <p>Choose <strong>Regular User</strong> or <strong>Admin / Root</strong>. Admin/root account access adds +10 to the threat score — privileged accounts are high-value targets and any suspicious activity on them is treated as a priority threat.</p>
+        </div>
+      </div>
+
+      <div class="feat-item" style="border-color:var(--green)">
+        <span class="feat-icon">📋</span>
+        <div class="feat-text">
+          <h4 style="color:var(--green)">RECENT SCANS HISTORY</h4>
+          <p>The last 5 scans are automatically saved and displayed in the UI with timestamp, source IP, and threat score. Color-coded green (normal) or red (abnormal) for instant visual reference — no need to re-scan known IPs.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE 3 — THREAT OUTPUT
+     ════════════════════════════════════════════════════════════ -->
+<section class="page page-output" id="output">
+  <div class="page-badge">PAGE 03 / 07</div>
+  <div class="section-label">THREAT OUTPUT</div>
+  <h2 class="page-title">Analysis Results Panel</h2>
+  <p class="page-desc">What AuthGuard shows after scanning — a clear, binary verdict with full signal breakdown.</p>
+
+  <div class="grid-2 stagger" style="align-items:start">
+
+    <div style="display:flex; flex-direction:column; gap:18px">
+      <!-- Verdict display -->
+      <div class="verdict-box fade-in">
+        <div class="verdict-row normal-row">
+          <span class="verdict-emoji">✅</span>
+          <div>
+            <div class="verdict-label">NORMAL</div>
+            <div class="verdict-desc">Score &lt; 35 — No significant threat signals detected. Login behavior matches expected patterns for this IP, auth method, and account type.</div>
+          </div>
+        </div>
+        <div class="verdict-row abnormal-row">
+          <span class="verdict-emoji">🚨</span>
+          <div>
+            <div class="verdict-label">ABNORMAL</div>
+            <div class="verdict-desc">Score ≥ 35 — One or more critical threat signals triggered. Login flagged for review. Possible brute-force, credential stuffing, or malicious IP.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meter examples -->
+      <div class="meter-wrap fade-in">
+        <div class="meter-label">THREAT SCORE EXAMPLES</div>
+        <div style="display:flex; flex-direction:column; gap:14px; margin-top:10px">
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-family:'Share Tech Mono',monospace; font-size:0.75rem;">
+              <span style="color:var(--green)">Normal Login (MFA · Success · 0 fails)</span>
+              <span style="color:var(--green)">0 / 100</span>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill" style="width:0%; background:var(--green)"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-family:'Share Tech Mono',monospace; font-size:0.75rem;">
+              <span style="color:var(--orange)">Suspicious (8.8.8.8 · Fail · 5 fails)</span>
+              <span style="color:var(--orange)">47 / 100</span>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill" style="width:47%; background:linear-gradient(90deg,var(--orange),#ffaa20)"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-family:'Share Tech Mono',monospace; font-size:0.75rem;">
+              <span style="color:var(--red)">Brute-force (45.33.12.99 · Fail · 12 fails · Admin)</span>
+              <span style="color:var(--red)">95 / 100</span>
+            </div>
+            <div class="meter-track">
+              <div class="meter-fill" style="width:95%; background:linear-gradient(90deg,var(--red),#ff5070)"></div>
+            </div>
+          </div>
+          <div class="meter-scale"><span>0 — SAFE</span><span>35 — THRESHOLD</span><span>100 — CRITICAL</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feat-list fade-in">
+      <div class="feat-item" style="border-color:var(--red)">
+        <span class="feat-icon">⚡</span>
+        <div class="feat-text">
+          <h4 style="color:var(--red)">BINARY VERDICT</h4>
+          <p>Strictly NORMAL ✅ or ABNORMAL 🚨 — no confusing middle states. Score ≥ 35 triggers ABNORMAL. Clear, actionable output every single time.</p>
+        </div>
+      </div>
+      <div class="feat-item" style="border-color:var(--orange)">
+        <span class="feat-icon">📊</span>
+        <div class="feat-text">
+          <h4 style="color:var(--orange)">ANIMATED THREAT SCORE</h4>
+          <p>Numeric score 0–100 animates up from zero on each scan. Color transitions: green (safe) → orange (caution) → red (threat). The fill bar visually represents severity at a glance.</p>
+        </div>
+      </div>
+      <div class="feat-item" style="border-color:var(--yellow)">
+        <span class="feat-icon">🔍</span>
+        <div class="feat-text">
+          <h4 style="color:var(--yellow)">DETECTION SIGNALS LIST</h4>
+          <p>Every rule that fired is listed with color-coded dots: 🔴 red = critical threat, 🟠 orange = warning, 🟢 green = safe signal. Full transparency into why a login was flagged.</p>
+        </div>
+      </div>
+      <div class="feat-item" style="border-color:var(--cyan)">
+        <span class="feat-icon">⏱️</span>
+        <div class="feat-text">
+          <h4 style="color:var(--cyan)">REAL-TIME RESULT</h4>
+          <p>Analysis completes in under 1 second. A cyberpunk loading spinner shows during processing. Results animate in with a smooth slide-from-right transition for a polished UX.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE 4 — AI DETECTION ENGINE
+     ════════════════════════════════════════════════════════════ -->
+<section class="page page-engine" id="engine">
+  <div class="page-badge">PAGE 04 / 07</div>
+  <div class="section-label">AI DETECTION ENGINE</div>
+  <h2 class="page-title">Dual Machine Learning Models</h2>
+  <p class="page-desc">AuthGuard runs two ML models simultaneously and blends their scores for maximum detection accuracy.</p>
+
+  <div class="grid-2 stagger" style="margin-bottom:24px">
+
+    <div class="card fade-in" style="border-color:var(--orange)">
+      <div class="card-accent" style="background:var(--orange)"></div>
+      <span class="card-icon">🌲</span>
+      <div class="card-title" style="color:var(--orange)">ISOLATION FOREST — UNSUPERVISED</div>
+      <div class="card-body">
+        <p style="margin-bottom:12px">Detects statistical outliers without needing any labels. Builds 150 random decision trees across all features. Short isolation path = easy to separate = <strong style="color:var(--orange)">ABNORMAL</strong>.</p>
+        <div style="display:flex; flex-direction:column; gap:6px">
+          <div style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; color:var(--text)">▸ 150 estimators for robust detection</div>
+          <div style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; color:var(--text)">▸ Contamination parameter: 15% sensitivity</div>
+          <div style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; color:var(--text)">▸ Works without labels — detects zero-days</div>
+          <div style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; color:var(--text)">▸ Score normalized 0 → 1 after prediction</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-in" style="border-color:var(--cyan)">
+      <div class="card-accent" style="background:var(--cyan)"></div>
+      <span class="card-icon">🌳</span>
+      <div class="card-title" style="color:var(--cyan)">RANDOM FOREST — SUPERVISED</div>
+      <div class="card-body">
+        <p style="margin-bottom:12px">Trained on labeled login data to classify NORMAL vs ABNORMAL. 100 decision trees with balanced class weights handle dataset imbalance automatically.</p>
+        <div style="display:flex; flex-direction:column; gap:6px">
+          <div style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; color:var(--text)">▸ 100 trees, class_weight='balanced'</div>
+          <div style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; color:var(--text)">▸ Outputs probability score 0.0 → 1.0</div>
+          <div style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; color:var(--text)">▸ Feature importance reveals key signals</div>
+          <div style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; color:var(--text)">▸ High precision on labeled login data</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Ensemble formula -->
+  <div class="card fade-in" style="border-color:var(--purple); background:rgba(155,95,255,0.05)">
+    <div class="card-accent" style="background:var(--purple)"></div>
+    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap">
+      <span style="font-size:2rem">⬡</span>
+      <div>
+        <div class="card-title" style="color:var(--purple)">ENSEMBLE FUSION FORMULA</div>
+        <div style="font-family:'Share Tech Mono',monospace; font-size:0.9rem; color:var(--text); margin-top:6px">
+          Threat Score = (Isolation Forest score × <span style="color:var(--orange)">0.5</span>) + (Random Forest probability × <span style="color:var(--cyan)">0.5</span>)
+        </div>
+        <div style="font-family:'Share Tech Mono',monospace; font-size:0.82rem; color:var(--muted); margin-top:6px">
+          Score ≥ 35  →  🚨 <span style="color:var(--red)">ABNORMAL</span> &nbsp;|&nbsp; Score &lt; 35  →  ✅ <span style="color:var(--green)">NORMAL</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="grid-3 stagger">
+    <div class="card fade-in">
+      <span class="card-icon">🎯</span>
+      <div class="card-title" style="color:var(--cyan)">ACCURACY</div>
+      <div style="font-family:'Orbitron',monospace; font-size:2rem; font-weight:900; color:var(--orange); margin:8px 0">92.1%</div>
+      <div class="card-body">Correct classifications on 2,000 real login records from the dataset.</div>
+    </div>
+    <div class="card fade-in">
+      <span class="card-icon">📈</span>
+      <div class="card-title" style="color:var(--cyan)">ROC-AUC SCORE</div>
+      <div style="font-family:'Orbitron',monospace; font-size:2rem; font-weight:900; color:var(--purple); margin:8px 0">0.947</div>
+      <div class="card-body">Excellent discrimination between NORMAL and ABNORMAL login events.</div>
+    </div>
+    <div class="card fade-in">
+      <span class="card-icon">⚖️</span>
+      <div class="card-title" style="color:var(--cyan)">F1-SCORE</div>
+      <div style="font-family:'Orbitron',monospace; font-size:2rem; font-weight:900; color:var(--green); margin:8px 0">90.5%</div>
+      <div class="card-body">Balanced precision and recall — minimizing both false positives and false negatives.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE 5 — DETECTION SIGNALS
+     ════════════════════════════════════════════════════════════ -->
+<section class="page page-signals" id="signals">
+  <div class="page-badge">PAGE 05 / 07</div>
+  <div class="section-label">DETECTION SIGNALS</div>
+  <h2 class="page-title">What Triggers ABNORMAL</h2>
+  <p class="page-desc">Every rule AuthGuard evaluates, the score it adds, and why it matters for login security.</p>
+
+  <div class="grid-2 stagger" style="align-items:start">
+    <div class="fade-in">
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th>SIGNAL</th>
+            <th>CONDITION</th>
+            <th>SCORE</th>
+            <th>SEVERITY</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--text)">Known Malicious IP</td>
+            <td style="color:var(--muted)">45.33.12.99, 1.2.3.4, etc.</td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar" style="width:80px; background:var(--red)"></div>
+                <span class="score-val" style="color:var(--red)">+40</span>
+              </div>
+            </td>
+            <td><span class="pill pill-red" style="font-size:0.6rem; padding:3px 10px">CRITICAL</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text)">Brute-Force Attack</td>
+            <td style="color:var(--muted)">10+ failures in 24h</td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar" style="width:50px; background:var(--red)"></div>
+                <span class="score-val" style="color:var(--red)">+25</span>
+              </div>
+            </td>
+            <td><span class="pill pill-red" style="font-size:0.6rem; padding:3px 10px">CRITICAL</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text)">Login Failed</td>
+            <td style="color:var(--muted)">Status = FAIL</td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar" style="width:40px; background:var(--orange)"></div>
+                <span class="score-val" style="color:var(--orange)">+20</span>
+              </div>
+            </td>
+            <td><span class="pill pill-orange" style="font-size:0.6rem; padding:3px 10px">HIGH</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text)">Suspicious Public IP</td>
+            <td style="color:var(--muted)">8.8.8.8, 1.1.1.1, etc.</td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar" style="width:30px; background:var(--orange)"></div>
+                <span class="score-val" style="color:var(--orange)">+15</span>
+              </div>
+            </td>
+            <td><span class="pill pill-orange" style="font-size:0.6rem; padding:3px 10px">MEDIUM</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text)">Elevated Failures</td>
+            <td style="color:var(--muted)">4–9 failures in 24h</td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar" style="width:24px; background:var(--orange)"></div>
+                <span class="score-val" style="color:var(--orange)">+12</span>
+              </div>
+            </td>
+            <td><span class="pill pill-orange" style="font-size:0.6rem; padding:3px 10px">MEDIUM</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text)">Admin/Root Access</td>
+            <td style="color:var(--muted)">Privileged account</td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar" style="width:20px; background:var(--yellow)"></div>
+                <span class="score-val" style="color:var(--yellow)">+10</span>
+              </div>
+            </td>
+            <td><span class="pill pill-cyan" style="font-size:0.6rem; padding:3px 10px">LOW</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text)">Weak Auth + Fail</td>
+            <td style="color:var(--muted)">Password method & FAIL</td>
+            <td>
+              <div class="score-bar-wrap">
+                <div class="score-bar" style="width:16px; background:var(--yellow)"></div>
+                <span class="score-val" style="color:var(--yellow)">+8</span>
+              </div>
+            </td>
+            <td><span class="pill pill-cyan" style="font-size:0.6rem; padding:3px 10px">LOW</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px">
+      <!-- Example test cases -->
+      <div class="card fade-in" style="border-color:var(--green)">
+        <div class="card-accent" style="background:var(--green)"></div>
+        <div class="card-title" style="color:var(--green)">✅ NORMAL — EXAMPLE TEST</div>
+        <div class="card-body" style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; line-height:2">
+          <div>IP: <span style="color:var(--cyan)">192.168.1.11</span></div>
+          <div>Auth: <span style="color:var(--cyan)">MFA</span></div>
+          <div>Status: <span style="color:var(--green)">SUCCESS</span></div>
+          <div>Failures: <span style="color:var(--green)">0</span></div>
+          <div>User: <span style="color:var(--cyan)">Regular</span></div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--border)">
+            Score: <span style="color:var(--green); font-size:1.1rem; font-weight:700">0</span> → ✅ NORMAL
+          </div>
+        </div>
+      </div>
+
+      <div class="card fade-in" style="border-color:var(--red)">
+        <div class="card-accent" style="background:var(--red)"></div>
+        <div class="card-title" style="color:var(--red)">🚨 ABNORMAL — EXAMPLE TEST</div>
+        <div class="card-body" style="font-family:'Share Tech Mono',monospace; font-size:0.78rem; line-height:2">
+          <div>IP: <span style="color:var(--red)">45.33.12.99 (+40)</span></div>
+          <div>Auth: <span style="color:var(--orange)">Password</span></div>
+          <div>Status: <span style="color:var(--red)">FAIL (+20)</span></div>
+          <div>Failures: <span style="color:var(--red)">12 → Brute-force (+25)</span></div>
+          <div>User: <span style="color:var(--orange)">Admin (+10)</span></div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--border)">
+            Score: <span style="color:var(--red); font-size:1.1rem; font-weight:700">95</span> → 🚨 ABNORMAL
+          </div>
+        </div>
+      </div>
+
+      <div class="card fade-in" style="border-color:var(--muted)">
+        <div class="card-title" style="color:var(--cyan); margin-bottom:10px">SCORE THRESHOLD</div>
+        <div style="display:flex; align-items:center; gap:16px">
+          <div style="text-align:center">
+            <div style="font-family:'Orbitron',monospace; font-size:2rem; color:var(--green); font-weight:900">0–34</div>
+            <div class="badge-normal" style="margin-top:6px">✅ NORMAL</div>
+          </div>
+          <div style="font-size:1.5rem; color:var(--muted)">→</div>
+          <div style="text-align:center">
+            <div style="font-family:'Orbitron',monospace; font-size:2rem; color:var(--red); font-weight:900">35–100</div>
+            <div class="badge-abnormal" style="margin-top:6px">🚨 ABNORMAL</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE 6 — FULL DASHBOARD
+     ════════════════════════════════════════════════════════════ -->
+<section class="page page-dashboard" id="dashboard">
+  <div class="page-badge">PAGE 06 / 07</div>
+  <div class="section-label">FULL DASHBOARD</div>
+  <h2 class="page-title">Flask-Powered Analytics Dashboard</h2>
+  <p class="page-desc">The AuthGuard dashboard processes your entire dataset and displays rich threat intelligence visualizations.</p>
+
+  <div class="dash-grid stagger">
+
+    <div class="dash-card fade-in" style="border-left-color:var(--cyan)">
+      <span class="dash-icon">📂</span>
+      <div class="dash-title" style="color:var(--cyan)">FILE UPLOAD</div>
+      <div class="dash-desc">Upload your own <code style="color:var(--cyan)">.xlsx</code> or <code style="color:var(--cyan)">.csv</code> login dataset. AuthGuard auto-detects columns and engineers features. Also includes built-in demo data — works instantly with zero setup.</div>
+    </div>
+
+    <div class="dash-card fade-in" style="border-left-color:var(--orange)">
+      <span class="dash-icon">🎛️</span>
+      <div class="dash-title" style="color:var(--orange)">MODEL SELECTOR</div>
+      <div class="dash-desc">Choose between <strong>Isolation Forest</strong> (unsupervised), <strong>Random Forest</strong> (supervised), or <strong>Both</strong> for the ensemble approach. Switchable at any time without reloading.</div>
+    </div>
+
+    <div class="dash-card fade-in" style="border-left-color:var(--purple)">
+      <span class="dash-icon">🎚️</span>
+      <div class="dash-title" style="color:var(--purple)">SENSITIVITY SLIDER</div>
+      <div class="dash-desc">Adjust the contamination parameter from 1% to 40% in real-time. Lower = more strict (fewer detections), Higher = more sensitive (catches more threats). Fine-tune to your dataset.</div>
+    </div>
+
+    <div class="dash-card fade-in" style="border-left-color:var(--green)">
+      <span class="dash-icon">📊</span>
+      <div class="dash-title" style="color:var(--green)">5 STAT CARDS</div>
+      <div class="dash-desc">Animated live counters: <strong>Total Logs</strong>, <strong>Normal Count</strong>, <strong>Threats Found</strong>, <strong>Model Accuracy</strong>, and <strong>ROC-AUC Score</strong>. Numbers animate up on each analysis run.</div>
+    </div>
+
+    <div class="dash-card fade-in" style="border-left-color:var(--cyan)">
+      <span class="dash-icon">🍩</span>
+      <div class="dash-title" style="color:var(--cyan)">DOUGHNUT CHART</div>
+      <div class="dash-desc">Visual split of NORMAL vs THREAT proportions across your entire dataset. Interactive tooltips show exact counts on hover.</div>
+    </div>
+
+    <div class="dash-card fade-in" style="border-left-color:var(--orange)">
+      <span class="dash-icon">📉</span>
+      <div class="dash-title" style="color:var(--orange)">THREAT TIMELINE</div>
+      <div class="dash-desc">Dual-axis line chart showing threat rate % and event count over time. Auto-adjusts to daily or hourly based on your dataset's time span.</div>
+    </div>
+
+    <div class="dash-card fade-in" style="border-left-color:var(--red)">
+      <span class="dash-icon">🗺️</span>
+      <div class="dash-title" style="color:var(--red)">TOP SUSPICIOUS IPs</div>
+      <div class="dash-desc">Horizontal bar chart ranking the top 8 most threat-associated IP addresses in your dataset. Instantly spot repeat offenders.</div>
+    </div>
+
+    <div class="dash-card fade-in" style="border-left-color:var(--yellow)">
+      <span class="dash-icon">📋</span>
+      <div class="dash-title" style="color:var(--yellow)">LOGS TABLE</div>
+      <div class="dash-desc">Full paginated table — 15 records per page — with color-coded threat score bars per row. Threats appear at the top, sorted by score descending.</div>
+    </div>
+
+    <div class="dash-card fade-in" style="border-left-color:var(--purple)">
+      <span class="dash-icon">🔍</span>
+      <div class="dash-title" style="color:var(--purple)">SEARCH & FILTER</div>
+      <div class="dash-desc">Live search by IP, username, or auth method. Filter tabs: <strong>All Logs</strong>, <strong>Threats Only</strong>, <strong>Normal Only</strong>. Results update instantly with no reload.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE 7 — TECH STACK
+     ════════════════════════════════════════════════════════════ -->
+<section class="page page-tech" id="tech">
+  <div class="page-badge">PAGE 07 / 07</div>
+  <div class="section-label">TECH STACK</div>
+  <h2 class="page-title">Technologies Powering AuthGuard</h2>
+  <p class="page-desc">Every library, framework, and tool used to build AuthGuard from scratch.</p>
+
+  <div class="grid-3 stagger">
+
+    <div class="tech-block fade-in" style="border-color:var(--purple)">
+      <div class="tech-header" style="background:rgba(155,95,255,0.1); color:var(--purple)">
+        🤖 MACHINE LEARNING
+      </div>
+      <div class="tech-items">
+        <div class="tech-item">
+          <div class="tech-dot" style="background:var(--purple)"></div>
+          <div>
+            <div class="tech-item-name">Isolation Forest</div>
+            <div class="tech-item-desc">Unsupervised anomaly detection — finds outliers without any labeled data required</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:var(--purple)"></div>
+          <div>
+            <div class="tech-item-name">Random Forest</div>
+            <div class="tech-item-desc">Supervised classifier — 100 trees with balanced class weights for accuracy</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:var(--purple)"></div>
+          <div>
+            <div class="tech-item-name">Scikit-Learn</div>
+            <div class="tech-item-desc">Core ML framework for model training, evaluation, and prediction pipeline</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tech-block fade-in" style="border-color:var(--green)">
+      <div class="tech-header" style="background:rgba(0,232,122,0.08); color:var(--green)">
+        📦 DATA PROCESSING
+      </div>
+      <div class="tech-items">
+        <div class="tech-item">
+          <div class="tech-dot" style="background:var(--green)"></div>
+          <div>
+            <div class="tech-item-name">Pandas</div>
+            <div class="tech-item-desc">Dataset loading, cleaning, groupby aggregations, and feature engineering</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:var(--green)"></div>
+          <div>
+            <div class="tech-item-name">NumPy</div>
+            <div class="tech-item-desc">Numerical operations, array processing, and score normalization</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:var(--green)"></div>
+          <div>
+            <div class="tech-item-name">StandardScaler + LabelEncoder</div>
+            <div class="tech-item-desc">Feature normalization and categorical encoding for unbiased model training</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tech-block fade-in" style="border-color:var(--orange)">
+      <div class="tech-header" style="background:rgba(255,136,0,0.08); color:var(--orange)">
+        🌐 WEB APPLICATION
+      </div>
+      <div class="tech-items">
+        <div class="tech-item">
+          <div class="tech-dot" style="background:var(--orange)"></div>
+          <div>
+            <div class="tech-item-name">Flask (Python)</div>
+            <div class="tech-item-desc">REST API backend — serves ML predictions via the /analyze POST endpoint</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:var(--orange)"></div>
+          <div>
+            <div class="tech-item-name">Chart.js</div>
+            <div class="tech-item-desc">Interactive threat charts: doughnut, dual-axis line, bar, horizontal bar</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:var(--orange)"></div>
+          <div>
+            <div class="tech-item-name">HTML5 / CSS3 / JS</div>
+            <div class="tech-item-desc">Cyberpunk-themed dark UI with Orbitron font, scanlines, grid, glow effects</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Evaluation metrics -->
+  <div class="fade-in">
+    <div class="section-label" style="margin-bottom:20px">EVALUATION METRICS</div>
+    <div class="grid-4 stagger">
+      <div class="card" style="border-color:var(--cyan); text-align:center">
+        <div style="font-family:'Orbitron',monospace; font-size:2rem; font-weight:900; color:var(--cyan)">92.1%</div>
+        <div class="card-title" style="color:var(--muted); margin-top:6px">ACCURACY</div>
+      </div>
+      <div class="card" style="border-color:var(--green); text-align:center">
+        <div style="font-family:'Orbitron',monospace; font-size:2rem; font-weight:900; color:var(--green)">89.4%</div>
+        <div class="card-title" style="color:var(--muted); margin-top:6px">PRECISION</div>
+      </div>
+      <div class="card" style="border-color:var(--orange); text-align:center">
+        <div style="font-family:'Orbitron',monospace; font-size:2rem; font-weight:900; color:var(--orange)">91.7%</div>
+        <div class="card-title" style="color:var(--muted); margin-top:6px">RECALL</div>
+      </div>
+      <div class="card" style="border-color:var(--purple); text-align:center">
+        <div style="font-family:'Orbitron',monospace; font-size:2rem; font-weight:900; color:var(--purple)">0.947</div>
+        <div class="card-title" style="color:var(--muted); margin-top:6px">ROC-AUC</div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">🔐 AUTHGUARD</div>
+  <div class="footer-copy">AI LOGIN THREAT DETECTION SYSTEM  ·  HACKATHON 2026  ·  ALL FEATURES</div>
+  <div style="font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:var(--green)">[ SYSTEM PROTECTED ]</div>
+</footer>
+
+<script>
+// ── SCROLL FADE IN ─────────────────────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── ACTIVE NAV LINK ────────────────────────────────────────────
+const sections = document.querySelectorAll('.page');
+const navLinks = document.querySelectorAll('.nav-links a');
+
+const secObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(a => a.style.color = '');
+      const id = e.target.getAttribute('id');
+      const active = document.querySelector(`.nav-links a[href="#${id}"]`);
+      if (active) {
+        active.style.color = 'var(--cyan)';
+        active.style.borderColor = 'rgba(0,207,255,0.3)';
+        active.style.background = 'rgba(0,207,255,0.06)';
+      }
+    }
+  });
+}, { threshold: 0.4 });
+
+sections.forEach(s => secObs.observe(s));
+
+// ── CLOCK ──────────────────────────────────────────────────────
+function tick() {
+  // Just keep the dot blinking — clock already in CSS
+}
+</script>
+</body>
+</html>

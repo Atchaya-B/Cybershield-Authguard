@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CyberShield — Login Threat Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #020810;
+  --surface: #060f1e;
+  --card: #080e1d;
+  --border: #0d2e5a;
+  --cyan: #00e5ff;
+  --cyan2: #00b8d9;
+  --green: #00ff88;
+  --red: #ff2244;
+  --orange: #ff8c00;
+  --yellow: #ffe600;
+  --purple: #a855f7;
+  --text: #ccddef;
+  --muted: #3d5a7a;
+  --glow-cyan: 0 0 30px rgba(0,229,255,0.45);
+  --glow-green: 0 0 25px rgba(0,255,136,0.5);
+  --glow-red: 0 0 30px rgba(255,34,68,0.55);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  font-family: 'Rajdhani', sans-serif;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  background-image:
+    radial-gradient(ellipse at 15% 40%, rgba(0,100,200,0.1) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 60%, rgba(0,200,255,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(168,85,247,0.06) 0%, transparent 60%);
+}
+
+/* SCANLINES */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+  pointer-events:none; z-index:9999;
+}
+
+/* GRID */
+.grid-bg {
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(0,70,160,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,70,160,0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events:none;
+}
+
+/* FLOATING PARTICLES */
+.particles {
+  position:fixed; inset:0;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+.particle {
+  position:absolute;
+  border-radius:50%;
+  animation: float-up linear infinite;
+  opacity:0;
+}
+
+@keyframes float-up {
+  0% { transform: translateY(100vh) scale(0); opacity:0; }
+  10% { opacity:1; }
+  90% { opacity:0.6; }
+  100% { transform: translateY(-10vh) scale(1); opacity:0; }
+}
+
+/* CORNER DECORATIONS */
+.corner {
+  position:fixed;
+  width:80px; height:80px;
+  pointer-events:none;
+}
+.corner-tl { top:20px; left:20px; border-top:2px solid var(--cyan); border-left:2px solid var(--cyan); opacity:0.4; }
+.corner-tr { top:20px; right:20px; border-top:2px solid var(--cyan); border-right:2px solid var(--cyan); opacity:0.4; }
+.corner-bl { bottom:20px; left:20px; border-bottom:2px solid var(--cyan); border-left:2px solid var(--cyan); opacity:0.4; }
+.corner-br { bottom:20px; right:20px; border-bottom:2px solid var(--cyan); border-right:2px solid var(--cyan); opacity:0.4; }
+
+/* MAIN WRAPPER */
+.wrapper {
+  position:relative; z-index:10;
+  display:flex;
+  gap:0;
+  align-items:stretch;
+  width: min(960px, 96vw);
+  min-height: 560px;
+  border-radius: 20px;
+  overflow:hidden;
+  box-shadow: 0 0 80px rgba(0,100,200,0.2), 0 0 0 1px rgba(0,100,200,0.25);
+  animation: appear 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
+@keyframes appear {
+  from { opacity:0; transform:translateY(30px) scale(0.97); }
+  to { opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* LEFT PANEL */
+.left-panel {
+  flex:1;
+  background: linear-gradient(145deg, #030c1a 0%, #050d1c 50%, #08111f 100%);
+  border-right: 1px solid var(--border);
+  padding: 50px 44px;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+
+.left-panel::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0; bottom:0;
+  background: 
+    radial-gradient(ellipse at 30% 20%, rgba(0,150,255,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(168,85,247,0.06) 0%, transparent 50%);
+  pointer-events:none;
+}
+
+/* LOGO */
+.logo-area {
+  margin-bottom: 40px;
+  animation: fade-down 0.6s 0.2s both;
+}
+
+@keyframes fade-down {
+  from { opacity:0; transform:translateY(-15px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+.logo-row {
+  display:flex; align-items:center; gap:14px;
+  margin-bottom:6px;
+}
+
+.shield-icon {
+  width:44px; height:44px;
+  position:relative;
+}
+
+.shield-icon svg { width:100%; height:100%; }
+
+.logo-name {
+  font-family:'Orbitron', monospace;
+  font-size:1.4rem;
+  font-weight:900;
+  letter-spacing:3px;
+  color:var(--cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+.logo-sub {
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.6rem;
+  letter-spacing:4px;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+
+/* FORM TITLE */
+.form-title {
+  font-family:'Orbitron', monospace;
+  font-size:1rem;
+  font-weight:700;
+  letter-spacing:2px;
+  color:var(--text);
+  margin-bottom:6px;
+  animation: fade-down 0.6s 0.3s both;
+}
+
+.form-desc {
+  font-size:0.88rem;
+  color:var(--muted);
+  margin-bottom:32px;
+  line-height:1.5;
+  animation: fade-down 0.6s 0.35s both;
+}
+
+/* FORM FIELDS */
+.field {
+  margin-bottom:18px;
+  animation: fade-down 0.6s both;
+}
+.field:nth-child(1) { animation-delay:0.4s; }
+.field:nth-child(2) { animation-delay:0.45s; }
+.field:nth-child(3) { animation-delay:0.5s; }
+.field:nth-child(4) { animation-delay:0.55s; }
+
+.field-label {
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.65rem;
+  letter-spacing:3px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.field-label::before {
+  content:'';
+  width:6px; height:1px;
+  background:var(--cyan);
+  opacity:0.5;
+}
+
+.field-input {
+  width:100%;
+  background: rgba(6,15,30,0.8);
+  border: 1px solid var(--border);
+  border-radius:10px;
+  padding:13px 18px;
+  color:var(--text);
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.9rem;
+  outline:none;
+  transition: all 0.3s;
+  position:relative;
+}
+
+.field-input:focus {
+  border-color:var(--cyan);
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.1), inset 0 0 20px rgba(0,229,255,0.03);
+  background: rgba(0,229,255,0.04);
+}
+
+.field-input::placeholder { color:var(--muted); }
+
+select.field-input {
+  cursor:pointer;
+  appearance:none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233d5a7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position: right 16px center;
+  padding-right:40px;
+}
+
+select.field-input option {
+  background:var(--surface);
+  color:var(--text);
+}
+
+/* SLIDER FIELD */
+.slider-row {
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+input[type=range] {
+  flex:1;
+  -webkit-appearance:none;
+  height:5px;
+  background: var(--border);
+  border-radius:3px;
+  outline:none;
+  cursor:pointer;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:18px; height:18px;
+  background:var(--cyan);
+  border-radius:50%;
+  box-shadow: var(--glow-cyan);
+  cursor:pointer;
+  transition:transform 0.2s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.3); }
+
+.slider-val {
+  font-family:'Orbitron', monospace;
+  font-size:0.85rem;
+  font-weight:700;
+  color:var(--cyan);
+  min-width:36px;
+  text-align:center;
+}
+
+/* ANALYZE BUTTON */
+.btn-analyze {
+  width:100%;
+  padding:16px;
+  margin-top:8px;
+  background: linear-gradient(135deg, #00304a 0%, #005070 50%, #006080 100%);
+  border: 1px solid rgba(0,229,255,0.6);
+  border-radius:10px;
+  color:var(--cyan);
+  font-family:'Orbitron', monospace;
+  font-size:0.82rem;
+  font-weight:700;
+  letter-spacing:3px;
+  cursor:pointer;
+  transition:all 0.3s;
+  text-shadow:var(--glow-cyan);
+  box-shadow:var(--glow-cyan);
+  position:relative;
+  overflow:hidden;
+  animation:fade-down 0.6s 0.6s both;
+}
+
+.btn-analyze::before {
+  content:'';
+  position:absolute;
+  top:0; left:-100%;
+  width:100%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,0.15), transparent);
+  transition:left 0.5s;
+}
+
+.btn-analyze:hover::before { left:100%; }
+
+.btn-analyze:hover {
+  background:linear-gradient(135deg, #005070 0%, #008090 100%);
+  box-shadow: 0 0 50px rgba(0,229,255,0.7);
+  transform:translateY(-2px);
+}
+
+.btn-analyze:active { transform:translateY(0); }
+.btn-analyze:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+
+/* RIGHT PANEL - RESULTS */
+.right-panel {
+  width:340px;
+  background:linear-gradient(165deg, #030a14 0%, #040c1a 100%);
+  padding:44px 36px;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+
+.right-panel::before {
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: scan 3s linear infinite;
+}
+
+@keyframes scan { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+
+.right-panel::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at 50% 30%, rgba(0,180,220,0.07) 0%, transparent 65%);
+  pointer-events:none;
+}
+
+.panel-label {
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.6rem;
+  letter-spacing:4px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:24px;
+  animation:fade-down 0.6s 0.7s both;
+}
+
+/* IDLE STATE */
+.idle-state {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:16px;
+  opacity:0.5;
+  position:relative;
+  z-index:1;
+}
+
+.idle-icon {
+  width:80px; height:80px;
+  border:2px solid var(--border);
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:2rem;
+  animation:pulse-idle 3s infinite;
+}
+
+@keyframes pulse-idle {
+  0%,100%{box-shadow:none}
+  50%{box-shadow:0 0 30px rgba(0,100,180,0.3)}
+}
+
+.idle-text {
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.7rem;
+  letter-spacing:2px;
+  color:var(--muted);
+  line-height:1.8;
+}
+
+/* RESULT DISPLAY */
+.result-display {
+  display:none;
+  flex-direction:column;
+  gap:20px;
+  flex:1;
+  position:relative;
+  z-index:1;
+  animation:result-appear 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
+@keyframes result-appear {
+  from{opacity:0;transform:translateX(20px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+/* STATUS BADGE */
+.status-badge {
+  padding:14px 20px;
+  border-radius:12px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+
+.status-badge.normal {
+  background:rgba(0,255,136,0.08);
+  border:1px solid rgba(0,255,136,0.4);
+  box-shadow:var(--glow-green);
+}
+
+.status-badge.threat {
+  background:rgba(255,34,68,0.08);
+  border:1px solid rgba(255,34,68,0.5);
+  box-shadow:var(--glow-red);
+  animation:threat-flash 2s infinite;
+}
+
+.status-badge.warning {
+  background:rgba(255,140,0,0.08);
+  border:1px solid rgba(255,140,0,0.5);
+  box-shadow:0 0 25px rgba(255,140,0,0.3);
+}
+
+@keyframes threat-flash {
+  0%,100%{box-shadow:var(--glow-red)}
+  50%{box-shadow:0 0 50px rgba(255,34,68,0.7)}
+}
+
+.status-icon { font-size:1.8rem; margin-bottom:6px; display:block; }
+
+.status-label {
+  font-family:'Orbitron', monospace;
+  font-size:0.75rem;
+  font-weight:700;
+  letter-spacing:4px;
+}
+
+.status-badge.normal .status-label { color:var(--green); text-shadow:var(--glow-green); }
+.status-badge.threat .status-label { color:var(--red); text-shadow:var(--glow-red); }
+.status-badge.warning .status-label { color:var(--orange); }
+
+/* RISK METER */
+.risk-section { }
+
+.risk-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  margin-bottom:10px;
+}
+
+.risk-title {
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.65rem;
+  letter-spacing:3px;
+  color:var(--muted);
+}
+
+.risk-value {
+  font-family:'Orbitron', monospace;
+  font-size:1.6rem;
+  font-weight:900;
+  line-height:1;
+}
+
+.risk-track {
+  height:10px;
+  background:rgba(255,255,255,0.05);
+  border-radius:5px;
+  overflow:hidden;
+  position:relative;
+  border:1px solid var(--border);
+}
+
+.risk-fill {
+  height:100%;
+  border-radius:5px;
+  transition:width 1s cubic-bezier(0.16,1,0.3,1);
+  position:relative;
+}
+
+.risk-fill::after {
+  content:'';
+  position:absolute;
+  right:0; top:0; bottom:0;
+  width:4px;
+  background:rgba(255,255,255,0.6);
+  border-radius:0 5px 5px 0;
+}
+
+.risk-level-label {
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.65rem;
+  letter-spacing:2px;
+  margin-top:8px;
+  font-weight:600;
+}
+
+/* SIGNAL CARDS */
+.signals-title {
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.6rem;
+  letter-spacing:3px;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+.signal-list { display:flex; flex-direction:column; gap:7px; }
+
+.signal-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 13px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:8px;
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.72rem;
+  transition:all 0.3s;
+}
+
+.signal-item.active-bad {
+  background:rgba(255,34,68,0.07);
+  border-color:rgba(255,34,68,0.3);
+  color:var(--red);
+}
+
+.signal-item.active-good {
+  background:rgba(0,255,136,0.05);
+  border-color:rgba(0,255,136,0.2);
+  color:var(--green);
+}
+
+.signal-item.active-warn {
+  background:rgba(255,140,0,0.07);
+  border-color:rgba(255,140,0,0.3);
+  color:var(--orange);
+}
+
+.signal-dot {
+  width:7px; height:7px;
+  border-radius:50%;
+  flex-shrink:0;
+  background:var(--muted);
+}
+
+.signal-item.active-bad .signal-dot { background:var(--red); box-shadow:0 0 8px var(--red); }
+.signal-item.active-good .signal-dot { background:var(--green); box-shadow:0 0 8px var(--green); }
+.signal-item.active-warn .signal-dot { background:var(--orange); box-shadow:0 0 8px var(--orange); }
+
+/* VIEW DASHBOARD LINK */
+.view-dashboard {
+  margin-top:auto;
+  padding-top:20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  color:var(--muted);
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.72rem;
+  letter-spacing:2px;
+  cursor:pointer;
+  transition:all 0.3s;
+  text-decoration:none;
+  border-top:1px solid rgba(255,255,255,0.05);
+}
+
+.view-dashboard:hover { color:var(--cyan); }
+.view-dashboard:hover .arrow { transform:translateX(4px); }
+.arrow { transition:transform 0.3s; }
+
+/* LOADING RING */
+.loading-ring {
+  display:none;
+  width:60px; height:60px;
+  border:3px solid var(--border);
+  border-top:3px solid var(--cyan);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+  margin:auto;
+  box-shadow:var(--glow-cyan);
+}
+
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* HISTORY LOG */
+.history-section {
+  margin-top:24px;
+  animation:fade-down 0.6s 0.8s both;
+}
+
+.history-title {
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.6rem;
+  letter-spacing:3px;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+.history-list { display:flex; flex-direction:column; gap:5px; max-height:120px; overflow-y:auto; }
+
+.history-item {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  background:rgba(255,255,255,0.02);
+  border-radius:6px;
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.65rem;
+  color:var(--muted);
+  border-left:2px solid;
+}
+
+.history-item.normal { border-color:var(--green); }
+.history-item.threat { border-color:var(--red); }
+.history-item.warning { border-color:var(--orange); }
+
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+/* CLOCK */
+.top-bar {
+  position:fixed;
+  top:16px; right:24px;
+  font-family:'Share Tech Mono', monospace;
+  font-size:0.72rem;
+  color:var(--muted);
+  z-index:100;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.online-dot {
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:var(--glow-green);
+  animation:blink 1.5s infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* MOBILE */
+@media (max-width:720px) {
+  .wrapper { flex-direction:column; min-height:auto; border-radius:14px; }
+  .right-panel { width:100%; }
+  .left-panel { padding:32px 28px; }
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- PARTICLES -->
+<div class="particles" id="particles"></div>
+
+<!-- CORNERS -->
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="online-dot"></div>
+  <span id="clock">00:00:00</span>
+</div>
+
+<div class="wrapper">
+
+  <!-- LEFT: INPUT FORM -->
+  <div class="left-panel">
+    <!-- Logo -->
+    <div class="logo-area">
+      <div class="logo-row">
+        <div class="shield-icon">
+          <svg viewBox="0 0 44 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 2L40 10V26C40 36 22 46 22 46C22 46 4 36 4 26V10L22 2Z" stroke="#00e5ff" stroke-width="2" fill="rgba(0,229,255,0.06)"/>
+            <path d="M22 8L34 14V26C34 33 22 40 22 40C22 40 10 33 10 26V14L22 8Z" stroke="#00e5ff" stroke-width="1" fill="rgba(0,229,255,0.04)" stroke-dasharray="3 2" opacity="0.6"/>
+            <circle cx="22" cy="22" r="5" fill="rgba(0,229,255,0.2)" stroke="#00e5ff" stroke-width="1.5"/>
+            <circle cx="22" cy="22" r="2" fill="#00e5ff"/>
+            <line x1="22" y1="17" x2="22" y2="8" stroke="#00e5ff" stroke-width="1" opacity="0.5"/>
+            <line x1="27" y1="20" x2="34" y2="16" stroke="#00e5ff" stroke-width="1" opacity="0.5"/>
+            <line x1="27" y1="25" x2="34" y2="28" stroke="#00e5ff" stroke-width="1" opacity="0.5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-name">AUTHGUARD</div>
+          <div class="logo-sub">AI Threat Detection Engine v2.4</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-title">LOGIN THREAT SCANNER</div>
+    <div class="form-desc">Enter login parameters to analyze threat level using anomaly detection models.</div>
+
+    <!-- FIELDS -->
+    <div class="field">
+      <div class="field-label">Source IP Address</div>
+      <input class="field-input" id="ip-input" type="text" placeholder="e.g. 192.168.1.1 or 45.33.12.99" value=""/>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Authentication Method</div>
+      <select class="field-input" id="auth-input">
+        <option value="password">Password</option>
+        <option value="mfa">Multi-Factor Auth (MFA)</option>
+        <option value="ssh">SSH Key</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Login Status</div>
+      <select class="field-input" id="status-input">
+        <option value="success">SUCCESS</option>
+        <option value="fail">FAIL</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Failure Count (last 24h)</div>
+      <div class="slider-row">
+        <input type="range" id="fail-count" min="0" max="20" value="0" oninput="updateSlider(this)"/>
+        <div class="slider-val" id="fail-count-val">0</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">Username Type</div>
+      <select class="field-input" id="user-input">
+        <option value="user">Regular User</option>
+        <option value="admin">Admin / Root</option>
+      </select>
+    </div>
+
+    <button class="btn-analyze" id="analyze-btn" onclick="analyze()">
+      ⬡ SCAN FOR THREATS
+    </button>
+
+    <!-- HISTORY -->
+    <div class="history-section">
+      <div class="history-title">RECENT SCANS</div>
+      <div class="history-list" id="history-list">
+        <div style="font-family:'Share Tech Mono';font-size:0.65rem;color:var(--muted);padding:6px;opacity:0.5;">No scans yet...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: RESULTS PANEL -->
+  <div class="right-panel">
+    <div class="panel-label">⬡ ANALYSIS OUTPUT</div>
+
+    <!-- IDLE -->
+    <div class="idle-state" id="idle-state">
+      <div class="idle-icon">🛡</div>
+      <div class="idle-text">
+        AWAITING<br>
+        INPUT DATA<br>
+        <br>
+        ENTER PARAMETERS<br>
+        AND SCAN
+      </div>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading-ring" id="loading-ring"></div>
+
+    <!-- RESULT -->
+    <div class="result-display" id="result-display">
+      <!-- Status -->
+      <div class="status-badge" id="status-badge">
+        <span class="status-icon" id="status-icon">✅</span>
+        <div class="status-label" id="status-label">NORMAL</div>
+      </div>
+
+      <!-- Risk Meter -->
+      <div class="risk-section">
+        <div class="risk-header">
+          <div class="risk-title">THREAT SCORE</div>
+          <div class="risk-value" id="risk-value">0</div>
+        </div>
+        <div class="risk-track">
+          <div class="risk-fill" id="risk-fill" style="width:0%"></div>
+        </div>
+        <div class="risk-level-label" id="risk-label">LOW RISK</div>
+      </div>
+
+      <!-- Signals -->
+      <div>
+        <div class="signals-title">DETECTION SIGNALS</div>
+        <div class="signal-list" id="signal-list"></div>
+      </div>
+
+      <!-- View Dashboard -->
+      <a class="view-dashboard" href="http://localhost:5000" target="_blank">
+        <span>📊</span>
+        <span>FULL DASHBOARD</span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PARTICLES ──────────────────────────────────────────────────
+const pContainer = document.getElementById('particles');
+for(let i=0;i<25;i++){
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const size = Math.random()*3+1;
+  const colors = ['#00e5ff','#00ff88','#0060a0','#a855f7'];
+  p.style.cssText = `
+    width:${size}px;height:${size}px;
+    background:${colors[Math.floor(Math.random()*colors.length)]};
+    left:${Math.random()*100}%;
+    animation-duration:${Math.random()*15+8}s;
+    animation-delay:${Math.random()*10}s;
+  `;
+  pContainer.appendChild(p);
+}
+
+// ── CLOCK ──────────────────────────────────────────────────────
+function updateClock(){
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleTimeString('en-US',{hour12:false});
+}
+setInterval(updateClock,1000); updateClock();
+
+// ── SLIDER LABELS ──────────────────────────────────────────────
+function updateSlider(el){
+  const suffix = el.id === 'hour-input' ? 'h' : '';
+  document.getElementById(el.id+'-val').textContent = el.value + suffix;
+}
+
+// ── KNOWN MALICIOUS IPS (simulated threat intel) ───────────────
+const KNOWN_BAD_IPS = ['45.33.12.99','192.168.99.1','0.0.0.0','1.2.3.4','185.220.101.1'];
+const SUSPICIOUS_IPS = ['8.8.8.8','1.1.1.1','209.58.128.1'];
+
+// ── ANALYSIS ENGINE ────────────────────────────────────────────
+function analyze(){
+  const ip       = document.getElementById('ip-input').value.trim() || '127.0.0.1';
+  const auth     = document.getElementById('auth-input').value;
+  const status   = document.getElementById('status-input').value;
+  const failCnt  = parseInt(document.getElementById('fail-count').value);
+  const userType = document.getElementById('user-input').value;
+
+  // Show loading
+  document.getElementById('idle-state').style.display = 'none';
+  document.getElementById('result-display').style.display = 'none';
+  document.getElementById('loading-ring').style.display = 'block';
+  document.getElementById('analyze-btn').disabled = true;
+
+  setTimeout(() => {
+    const result = scoreLogin({ip, auth, status, failCnt, userType});
+    renderResult(result, ip);
+    addHistory(result, ip);
+    document.getElementById('loading-ring').style.display = 'none';
+    document.getElementById('analyze-btn').disabled = false;
+  }, 900 + Math.random()*400);
+}
+
+function scoreLogin({ip, auth, status, failCnt, userType}){
+  const signals = [];
+  let score = 0;
+
+  // IP checks
+  if(KNOWN_BAD_IPS.includes(ip)){
+    score += 40;
+    signals.push({type:'bad', text:'Known malicious IP detected'});
+  } else if(SUSPICIOUS_IPS.includes(ip)){
+    score += 15;
+    signals.push({type:'warn', text:'Public DNS / suspicious IP'});
+  } else {
+    signals.push({type:'good', text:'IP not in threat database'});
+  }
+
+  // Login status
+  if(status === 'fail'){
+    score += 20;
+    signals.push({type:'bad', text:'Login attempt failed'});
+  } else {
+    signals.push({type:'good', text:'Login status: SUCCESS'});
+  }
+
+  // Fail count
+  if(failCnt >= 10){
+    score += 25;
+    signals.push({type:'bad', text:`Brute-force detected (${failCnt} fails)`});
+  } else if(failCnt >= 4){
+    score += 12;
+    signals.push({type:'warn', text:`Elevated failures: ${failCnt} attempts`});
+  } else if(failCnt === 0){
+    signals.push({type:'good', text:'No recent failed attempts'});
+  } else {
+    signals.push({type:'warn', text:`${failCnt} recent failed attempt(s)`});
+  }
+
+  // Admin access
+  if(userType === 'admin'){
+    score += 10;
+    signals.push({type:'warn', text:'Privileged account access'});
+  } else {
+    signals.push({type:'good', text:'Standard user account'});
+  }
+
+  // Auth method
+  if(auth === 'password' && status === 'fail'){
+    score += 8;
+    signals.push({type:'bad', text:'Weak auth method failed'});
+  } else if(auth === 'mfa'){
+    signals.push({type:'good', text:'MFA: strong authentication'});
+  } else if(auth === 'ssh'){
+    signals.push({type:'good', text:'SSH key: secure method'});
+  } else {
+    signals.push({type:'good', text:'Authentication method: OK'});
+  }
+
+  score = Math.min(100, score);
+
+  // Binary: NORMAL or ABNORMAL
+  const isAbnormal = score >= 35;
+  const statusType = isAbnormal ? 'threat' : 'normal';
+  const level = isAbnormal ? 'ABNORMAL' : 'NORMAL';
+
+  return { score, level, statusType, signals };
+}
+
+function renderResult({score, level, statusType, signals}, ip){
+  // Status badge
+  const badge = document.getElementById('status-badge');
+  const icon = document.getElementById('status-icon');
+  const label = document.getElementById('status-label');
+  badge.className = 'status-badge ' + statusType;
+  if(statusType === 'normal'){
+    icon.textContent = '✅';
+    label.textContent = 'NORMAL';
+  } else {
+    icon.textContent = '🚨';
+    label.textContent = 'ABNORMAL';
+  }
+
+  // Risk meter
+  const fill = document.getElementById('risk-fill');
+  const riskVal = document.getElementById('risk-value');
+  const riskLbl = document.getElementById('risk-label');
+
+  let fillColor;
+  if(score >= 35) fillColor = 'linear-gradient(90deg, #ff2244, #ff6080)';
+  else fillColor = 'linear-gradient(90deg, #00ff88, #00d0a0)';
+
+  fill.style.background = fillColor;
+  fill.style.boxShadow = score >= 35 ? '0 0 15px rgba(255,34,68,0.6)' : '0 0 15px rgba(0,255,136,0.5)';
+
+  // Animate score counter
+  let curr = 0;
+  const target = score;
+  const step = Math.max(1, Math.ceil(target / 30));
+  riskVal.style.color = score >= 35 ? '#ff2244' : '#00ff88';
+
+  const timer = setInterval(() => {
+    curr = Math.min(curr + step, target);
+    riskVal.textContent = curr;
+    fill.style.width = curr + '%';
+    if(curr >= target) clearInterval(timer);
+  }, 25);
+
+  riskLbl.textContent = level;
+  riskLbl.style.color = score >= 35 ? '#ff2244' : '#00ff88';
+
+  // Signals
+  const sl = document.getElementById('signal-list');
+  sl.innerHTML = signals.map(s => `
+    <div class="signal-item active-${s.type==='bad'?'bad':s.type==='warn'?'warn':'good'}">
+      <div class="signal-dot"></div>
+      <span>${s.text}</span>
+    </div>
+  `).join('');
+
+  // Show
+  const rd = document.getElementById('result-display');
+  rd.style.display = 'flex';
+  rd.style.animation = 'none';
+  void rd.offsetWidth;
+  rd.style.animation = 'result-appear 0.5s cubic-bezier(0.16,1,0.3,1) forwards';
+}
+
+// ── HISTORY ────────────────────────────────────────────────────
+const history = [];
+function addHistory({statusType, score}, ip){
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});
+  history.unshift({statusType, score, ip, time});
+  if(history.length > 5) history.pop();
+
+  const hl = document.getElementById('history-list');
+  hl.innerHTML = history.map(h => `
+    <div class="history-item ${h.statusType}">
+      <span style="color:var(--muted);min-width:40px">${h.time}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${h.ip}</span>
+      <span style="font-weight:700;color:${h.statusType==='threat'?'var(--red)':h.statusType==='warning'?'var(--orange)':'var(--green)'}">${h.score}</span>
+    </div>
+  `).join('');
+}
+
+// Auto-trigger on Enter key
+document.getElementById('ip-input').addEventListener('keydown', e => {
+  if(e.key === 'Enter') analyze();
+});
+</script>
+</body>
+</html>
